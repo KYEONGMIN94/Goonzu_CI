@@ -73,8 +73,9 @@ $resolvedTarget = $BuildTarget
 if ($BuildTarget -eq 'Auto') {
     $impact = @{}
     foreach ($line in @(Get-Content -LiteralPath (Join-Path $metaRoot 'impact.properties'))) {
-        $pair = ([string]$line).Split(@('='), 2)
-        if ($pair.Count -eq 2) { $impact[$pair[0]] = $pair[1] }
+        $value = [string]$line
+        $separator = $value.IndexOf('=')
+        if ($separator -gt 0) { $impact[$value.Substring(0, $separator)] = $value.Substring($separator + 1) }
     }
     if (-not $impact.ContainsKey('BuildTarget')) { throw 'Preflight did not produce BuildTarget.' }
     $resolvedTarget = [string]$impact['BuildTarget']

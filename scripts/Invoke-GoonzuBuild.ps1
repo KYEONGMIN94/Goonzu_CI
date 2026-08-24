@@ -60,8 +60,9 @@ $markerPath = Join-Path $resolvedStaging 'build\isolation.ready'
 if (-not (Test-Path -LiteralPath $markerPath -PathType Leaf)) { throw 'Isolation marker is missing. Run Prepare-IsolatedBuild.ps1 first.' }
 $marker = @{}
 foreach ($line in @(Get-Content -LiteralPath $markerPath)) {
-    $parts = ([string]$line).Split(@('='), 2)
-    if ($parts.Count -eq 2) { $marker[$parts[0]] = $parts[1] }
+    $value = [string]$line
+    $separator = $value.IndexOf('=')
+    if ($separator -gt 0) { $marker[$value.Substring(0, $separator)] = $value.Substring($separator + 1) }
 }
 if (-not $marker.ContainsKey('Target') -or $marker['Target'] -ne $Target) { throw 'Isolation marker target does not match the requested build.' }
 $commitSha = [string](& git -C $resolvedSource rev-parse HEAD)
