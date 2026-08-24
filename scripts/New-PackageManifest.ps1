@@ -38,14 +38,14 @@ $manifestPath = Join-Path $OutputDirectory ($PackageName + '-files.tsv')
 [System.IO.File]::WriteAllLines($manifestPath, [string[]]$rows, [System.Text.Encoding]::UTF8)
 $manifestHash = Get-Sha256 -LiteralPath $manifestPath
 $properties = @(
-    'PackageName=' + $PackageName,
-    'Version=' + $Version,
-    'CreatedUtc=' + (Get-Date).ToUniversalTime().ToString('o'),
-    'Root=' + $root,
-    'FileCount=' + $files.Count,
-    'ManifestSha256=' + $manifestHash,
-    'SourceCommit=' + $SourceCommit,
-    'VmSnapshot=' + $VmSnapshot
+    ('PackageName=' + $PackageName),
+    ('Version=' + $Version),
+    ('CreatedUtc=' + (Get-Date).ToUniversalTime().ToString('o')),
+    ('Root=' + $root),
+    ('FileCount=' + $files.Count),
+    ('ManifestSha256=' + $manifestHash),
+    ('SourceCommit=' + $SourceCommit),
+    ('VmSnapshot=' + $VmSnapshot)
 )
 [System.IO.File]::WriteAllLines((Join-Path $OutputDirectory ($PackageName + '.properties')), [string[]]$properties, [System.Text.Encoding]::UTF8)
 Write-Output 'Manifest=PASS'

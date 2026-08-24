@@ -116,10 +116,10 @@ try {
 
     [System.IO.File]::WriteAllLines((Join-Path $OutputDirectory 'changed-files.tsv'), [string[]]$rows, [System.Text.Encoding]::UTF8)
     $properties = @(
-        'BuildTarget=' + $target,
-        'ChangedFileCount=' + $paths.Count,
-        'BaseRevision=' + $BaseRevision,
-        'CommitSha=' + $commitSha.Trim()
+        ('BuildTarget=' + $target),
+        ('ChangedFileCount=' + $paths.Count),
+        ('BaseRevision=' + $BaseRevision),
+        ('CommitSha=' + $commitSha.Trim())
     )
     [System.IO.File]::WriteAllLines((Join-Path $OutputDirectory 'impact.properties'), [string[]]$properties, [System.Text.Encoding]::ASCII)
 

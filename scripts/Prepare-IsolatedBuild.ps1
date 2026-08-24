@@ -176,7 +176,7 @@ foreach ($row in $targetRows) {
 
 [System.IO.File]::WriteAllLines((Join-Path $artifactRoot 'meta\isolation-audit.tsv'), [string[]]$audit, [System.Text.Encoding]::UTF8)
 $commitSha = [string](& git -C $resolvedSource rev-parse HEAD)
-$marker = @('Target=' + $Target, 'CommitSha=' + $commitSha.Trim(), 'StagingRoot=' + $resolvedStaging)
+$marker = @(('Target=' + $Target), ('CommitSha=' + $commitSha.Trim()), ('StagingRoot=' + $resolvedStaging))
 [System.IO.File]::WriteAllLines((Join-Path $buildRoot 'isolation.ready'), [string[]]$marker, [System.Text.Encoding]::ASCII)
 Write-Output 'Isolation=PASS'
 Write-Output "Target=$Target"

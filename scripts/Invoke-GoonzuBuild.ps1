@@ -106,7 +106,7 @@ try {
     [System.IO.File]::WriteAllLines((Join-Path $metaRoot 'artifact-manifest.tsv'), [string[]]$manifest, [System.Text.Encoding]::UTF8)
     $steps.Insert(0, "Name`tStartedUtc`tFinishedUtc`tExitCode`tLogPath")
     [System.IO.File]::WriteAllLines((Join-Path $metaRoot 'build-steps.tsv'), [string[]]$steps, [System.Text.Encoding]::UTF8)
-    $success = @('Target=' + $Target, 'CommitSha=' + $commitSha.Trim(), 'StartedUtc=' + $buildStarted.ToString('o'), 'FinishedUtc=' + (Get-Date).ToUniversalTime().ToString('o'))
+    $success = @(('Target=' + $Target), ('CommitSha=' + $commitSha.Trim()), ('StartedUtc=' + $buildStarted.ToString('o')), ('FinishedUtc=' + (Get-Date).ToUniversalTime().ToString('o')))
     [System.IO.File]::WriteAllLines((Join-Path $metaRoot 'build.success'), [string[]]$success, [System.Text.Encoding]::ASCII)
 }
 catch {
