@@ -42,10 +42,10 @@ if (-not (Test-Path -LiteralPath $BuildTargetsPath -PathType Leaf)) { throw "Mis
 if (-not (Test-Path -LiteralPath $DependenciesPath -PathType Leaf)) { throw "Missing dependency configuration: $DependenciesPath" }
 
 $projects = @()
-foreach ($row in @(Import-Csv -LiteralPath $BuildTargetsPath)) {
+foreach ($row in @(Import-Csv -Path $BuildTargetsPath)) {
     $projects += New-Object PSObject -Property @{ Project = [string]$row.Project; Configuration = [string]$row.ProjectConfiguration; Solution = [string]$row.Solution }
 }
-foreach ($row in @(Import-Csv -LiteralPath $DependenciesPath)) {
+foreach ($row in @(Import-Csv -Path $DependenciesPath)) {
     $projects += New-Object PSObject -Property @{ Project = [string]$row.Project; Configuration = [string]$row.ProjectConfiguration; Solution = '' }
 }
 

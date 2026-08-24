@@ -127,8 +127,8 @@ if (-not (Test-Path -LiteralPath $DependenciesPath -PathType Leaf)) { throw "Mis
 $artifactRoot = Join-Path $resolvedStaging 'artifacts'
 $buildRoot = Join-Path $resolvedStaging 'build'
 $objectRoot = Join-Path $buildRoot 'objects'
-$targetRows = Select-TargetRows -Rows @(Import-Csv -LiteralPath $BuildTargetsPath) -RequestedTarget $Target
-$dependencyRows = @(Import-Csv -LiteralPath $DependenciesPath)
+$targetRows = Select-TargetRows -Rows @(Import-Csv -Path $BuildTargetsPath) -RequestedTarget $Target
+$dependencyRows = @(Import-Csv -Path $DependenciesPath)
 if ($targetRows.Count -eq 0) { throw "No build targets were selected for $Target." }
 
 foreach ($directory in @($artifactRoot, $buildRoot, $objectRoot, (Join-Path $artifactRoot 'meta'), (Join-Path $artifactRoot 'logs'))) {

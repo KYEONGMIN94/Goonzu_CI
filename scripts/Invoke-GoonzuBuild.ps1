@@ -69,7 +69,7 @@ if ($LASTEXITCODE -ne 0) { throw 'Unable to resolve source commit.' }
 if (-not $marker.ContainsKey('CommitSha') -or $marker['CommitSha'] -ne $commitSha.Trim()) { throw 'Source commit changed after isolation preparation.' }
 
 $devenv = Resolve-DevenvPath -RequestedPath $DevenvPath
-$rows = Select-TargetRows -Rows @(Import-Csv -LiteralPath $BuildTargetsPath) -RequestedTarget $Target
+$rows = Select-TargetRows -Rows @(Import-Csv -Path $BuildTargetsPath) -RequestedTarget $Target
 if ($rows.Count -eq 0) { throw "No build rows selected for $Target." }
 foreach ($directory in @($logRoot, $metaRoot)) {
     if (-not (Test-Path -LiteralPath $directory -PathType Container)) { New-Item -ItemType Directory -Path $directory -Force | Out-Null }

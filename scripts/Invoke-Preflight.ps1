@@ -75,7 +75,7 @@ try {
     if ($forbidden.Count -eq 0) { Add-Result 'ForbiddenNewFiles' 'PASS' 'none' }
     else { Add-Result 'ForbiddenNewFiles' 'FAIL' (($forbidden | Sort-Object -Unique) -join ', ') }
 
-    $changedTable = Import-Csv -LiteralPath (Join-Path $OutputDirectory 'changed-files.tsv') -Delimiter "`t"
+    $changedTable = Import-Csv -Path (Join-Path $OutputDirectory 'changed-files.tsv') -Delimiter "`t"
     $mergeMarkers = @()
     $textExtensions = @('.c','.cc','.cpp','.h','.hpp','.rc','.sln','.vcproj','.ps1','.bat','.cmd','.md','.toml','.yml','.yaml','.txt','.csv')
     foreach ($row in @($changedTable)) {
