@@ -70,4 +70,6 @@ Protect `master` in `Goonzu_Build`:
 - Block force pushes and branch deletion.
 - Allow the repository owner to self-merge only after the same checks pass.
 
+The required status context is `Goonzu isolated build`. A successful Jenkins build is not enough by itself: publish that context only from eight-row `All` build evidence with `scripts/Publish-GitHubBuildStatus.ps1 -Approved`. The script uses the caller's authenticated GitHub CLI and stores no token in this repository or Jenkins.
+
 This local repository must be pushed to an approved `Goonzu_CI` remote before another developer or Jenkins can consume it. No credentials, runtime binaries, VM images, or release shares belong here.
