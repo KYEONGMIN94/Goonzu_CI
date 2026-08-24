@@ -36,8 +36,14 @@ function Reset-GeneratedDirectory {
 
 function Invoke-Native {
     param([string]$FilePath, [string[]]$Arguments, [string]$Description)
-    & $FilePath @Arguments
-    if ($LASTEXITCODE -ne 0) { throw "$Description failed with exit code $LASTEXITCODE." }
+    $previousPreference = $ErrorActionPreference
+    try {
+        $ErrorActionPreference = 'Continue'
+        & $FilePath @Arguments
+        $exitCode = $LASTEXITCODE
+    }
+    finally { $ErrorActionPreference = $previousPreference }
+    if ($exitCode -ne 0) { throw "$Description failed with exit code $exitCode." }
 }
 
 $scriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
