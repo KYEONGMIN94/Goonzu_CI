@@ -32,6 +32,8 @@ Do not place the workspace under any of these roots:
    powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%WORKSPACE%\scripts\Test-BuildEnvironment.ps1" -SourceRoot "%WORKSPACE%\src" -DevenvPath "C:\Program Files (x86)\Microsoft Visual Studio .NET 2003\Common7\IDE\devenv.com"
    ```
 
+   Environment validation also requires at least `15,000,000,000` free bytes on the local drive that contains the source checkout and build staging root. This fails before VS2003 starts, preventing a long partial build from exhausting the compiler temporary-file drive.
+
 4. Run preflight:
 
    ```bat

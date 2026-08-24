@@ -8,7 +8,9 @@ param(
 
     [string]$BuildTargetsPath = '',
 
-    [string]$DependenciesPath = ''
+    [string]$DependenciesPath = '',
+
+    [Int64]$MinimumFreeBytes = 15000000000
 )
 
 Set-StrictMode -Version 2.0
@@ -40,6 +42,19 @@ if (-not (Get-Command git.exe -ErrorAction SilentlyContinue)) { throw 'git.exe w
 $resolvedDevenv = Resolve-DevenvPath -RequestedPath $DevenvPath
 if (-not (Test-Path -LiteralPath $BuildTargetsPath -PathType Leaf)) { throw "Missing build target configuration: $BuildTargetsPath" }
 if (-not (Test-Path -LiteralPath $DependenciesPath -PathType Leaf)) { throw "Missing dependency configuration: $DependenciesPath" }
+if ($MinimumFreeBytes -lt 0) { throw 'MinimumFreeBytes must not be negative.' }
+
+$sourceDriveRoot = [System.IO.Path]::GetPathRoot($resolvedSource)
+if ([string]::IsNullOrEmpty($sourceDriveRoot) -or $sourceDriveRoot.Length -lt 2 -or $sourceDriveRoot[1] -ne ':') {
+    throw "Source checkout must use a local drive so free space can be verified: $resolvedSource"
+}
+$sourceDeviceId = $sourceDriveRoot.Substring(0, 2)
+$sourceDisk = Get-WmiObject Win32_LogicalDisk -Filter ("DeviceID='" + $sourceDeviceId + "'")
+if ($null -eq $sourceDisk) { throw "Unable to inspect free space for source drive: $sourceDeviceId" }
+$sourceDriveFreeBytes = [Int64]$sourceDisk.FreeSpace
+if ($sourceDriveFreeBytes -lt $MinimumFreeBytes) {
+    throw "Insufficient build drive space. Drive=$sourceDeviceId FreeBytes=$sourceDriveFreeBytes RequiredBytes=$MinimumFreeBytes"
+}
 
 $projects = @()
 foreach ($row in @(Import-Csv -Path $BuildTargetsPath)) {
@@ -64,3 +79,6 @@ Write-Output "SourceRoot=$resolvedSource"
 Write-Output "DevenvPath=$resolvedDevenv"
 Write-Output "PowerShellVersion=$($PSVersionTable.PSVersion)"
 Write-Output "ConfiguredProjects=$($projects.Count)"
+Write-Output "SourceDrive=$sourceDeviceId"
+Write-Output "SourceDriveFreeBytes=$sourceDriveFreeBytes"
+Write-Output "MinimumFreeBytes=$MinimumFreeBytes"
