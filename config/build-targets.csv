@@ -1,0 +1,9 @@
+Target,Name,Solution,Project,SolutionConfiguration,ProjectConfiguration,Artifact
+Client,Client,GoonZuWorld\GoonZuWorld.sln,GoonZuWorld\BeTheRich.vcproj,Release_Korea,Release_Korea|Win32,Client\Goonzu_Client.exe
+GameServer,GameServer,GoonZuWorld\GoonZuWorld.sln,GoonZuWorld\BeTheRich.vcproj,ReleaseServer_Korea,ReleaseServer_Korea|Win32,GameServer\Goonzu_Server.exe
+ServerSuite,MasterServer,AdminSystem\MasterServer\MasterServer.sln,AdminSystem\MasterServer\MasterServer.vcproj,Release_Korea,Release_Korea|Win32,ServerSuite\MasterServer.exe
+ServerSuite,ServerAgent,AdminSystem\ServerAgent\ServerAgent.sln,AdminSystem\ServerAgent\ServerAgent.vcproj,Release_Korea,Release_Korea|Win32,ServerSuite\ServerAgent.exe
+ServerSuite,AccountDBManager,DBManager\AccountDBManager\AccountDBManager.sln,DBManager\AccountDBManager\AccountDBManager.vcproj,Release_Korea,Release_Korea|Win32,ServerSuite\AccountDBManager.exe
+ServerSuite,GameDBManager,DBManager\GameDBManager_World\GameDBManager.sln,DBManager\GameDBManager_World\GameDBManager.vcproj,Release_Korea,Release_Korea|Win32,ServerSuite\GameDBManager.exe
+ServerSuite,AuthServer,Server\AuthServer\AuthServer.sln,Server\AuthServer\AuthServer.vcproj,Release_Korea,Release_Korea|Win32,ServerSuite\AuthServer.exe
+ServerSuite,FrontServer,Server\FrontServer\FrontServer.sln,Server\FrontServer\FrontServer.vcproj,Release_Korea,Release_Korea|Win32,ServerSuite\FrontServer.exe

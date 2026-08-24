@@ -1,0 +1,4 @@
+Name,Project,ProjectConfiguration,OutputSubdirectory,IntermediateSubdirectory
+lua513,NLib\lua\lua513.vcproj,Release|Win32,Libraries\lua513,Objects\lua513
+NStatistics,NStatistics\NStatistics.vcproj,Release|Win32,Libraries\NStatistics,Objects\NStatistics
+NkCommon,NLib\NTech\Src_NkCore\NkCommon\VC70\NkCommon.vcproj,Release|Win32,Libraries\NkCommon,Objects\NkCommon

@@ -1,0 +1,6 @@
+artifacts/
+logs/
+build/
+staging/
+*.tmp
+*.bak
