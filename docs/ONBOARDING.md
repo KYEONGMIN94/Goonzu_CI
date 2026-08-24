@@ -52,6 +52,12 @@ Until artifact storage is formalized, record at minimum:
 - Client and Server executable SHA-256 values;
 - runtime data manifest SHA-256;
 - database backup/snapshot identifier;
+
+## Dedicated legacy build worker
+
+The current baseline worker is a separate VMware VM named `Goonzu_Build`. It uses a disk cloned from the named runtime baseline snapshot but has its own UUID, MAC address, hostname, and static address. Before connecting its NIC, run `scripts/Configure-BuildWorker.ps1` while isolated and restart the worker. The checked-in default is `GOONZU-BUILD` / `192.168.1.112`; change it only after confirming the address is unused.
+
+Install the isolated Jenkins job with `scripts/Install-JenkinsFreestyle.ps1` before the first connected boot. All inherited Jenkins jobs must remain disabled on this worker.
 - patch manifest version.
 
 Never commit multi-gigabyte runtime or distribution trees to `Goonzu_Build`.
