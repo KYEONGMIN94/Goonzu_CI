@@ -6,13 +6,18 @@ param(
     [Parameter(Mandatory = $true)]
     [string]$DevenvPath,
 
-    [string]$BuildTargetsPath = (Join-Path (Split-Path $PSScriptRoot -Parent) 'config\build-targets.csv'),
+    [string]$BuildTargetsPath = '',
 
-    [string]$DependenciesPath = (Join-Path (Split-Path $PSScriptRoot -Parent) 'config\build-dependencies.csv')
+    [string]$DependenciesPath = ''
 )
 
 Set-StrictMode -Version 2.0
 $ErrorActionPreference = 'Stop'
+
+$scriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
+$repositoryRoot = Split-Path -Parent $scriptRoot
+if ([string]::IsNullOrEmpty($BuildTargetsPath)) { $BuildTargetsPath = Join-Path $repositoryRoot 'config\build-targets.csv' }
+if ([string]::IsNullOrEmpty($DependenciesPath)) { $DependenciesPath = Join-Path $repositoryRoot 'config\build-dependencies.csv' }
 
 function Resolve-DevenvPath {
     param([string]$RequestedPath)

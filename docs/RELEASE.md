@@ -30,3 +30,19 @@ Server release automation is intentionally not enabled by this repository. Befor
 - readiness evidence for all seven processes, DB initialization `select=0..4, step=2`, and port `4010`.
 
 Do not infer deployment approval from a successful build or merge.
+
+## Runtime package identity
+
+Create a package manifest before accepting a client/runtime data set or VM snapshot:
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\New-PackageManifest.ps1 `
+  -PackageRoot <approved-package-root> `
+  -OutputDirectory <immutable-manifest-directory> `
+  -PackageName <client-or-server-runtime> `
+  -Version <yyyyMMdd.sequence> `
+  -SourceCommit <source-sha> `
+  -VmSnapshot <snapshot-name>
+```
+
+Keep the generated TSV and properties file beside the archived package. The properties file records the manifest SHA-256, source commit, and VM snapshot name; package acceptance requires all three identifiers.

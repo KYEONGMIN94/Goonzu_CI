@@ -3,11 +3,16 @@ param(
     [Parameter(Mandatory = $true)]
     [string]$SourceRoot,
 
-    [string]$CiRoot = (Split-Path $PSScriptRoot -Parent)
+    [string]$CiRoot = ''
 )
 
 Set-StrictMode -Version 2.0
 $ErrorActionPreference = 'Stop'
+
+if ([string]::IsNullOrEmpty($CiRoot)) {
+    $scriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
+    $CiRoot = Split-Path -Parent $scriptRoot
+}
 
 if (-not (Get-Command git.exe -ErrorAction SilentlyContinue)) { throw 'git.exe was not found in PATH.' }
 $resolvedSource = (Get-Item -LiteralPath $SourceRoot).FullName

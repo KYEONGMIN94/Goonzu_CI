@@ -18,7 +18,8 @@ if (-not (Test-Path -LiteralPath $OutputDirectory -PathType Container)) {
     New-Item -ItemType Directory -Path $OutputDirectory -Force | Out-Null
 }
 
-& (Join-Path $PSScriptRoot 'Get-ChangeImpact.ps1') -SourceRoot $SourceRoot -BaseRevision $BaseRevision -OutputDirectory $OutputDirectory
+$scriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
+& (Join-Path $scriptRoot 'Get-ChangeImpact.ps1') -SourceRoot $SourceRoot -BaseRevision $BaseRevision -OutputDirectory $OutputDirectory
 if ($LASTEXITCODE -ne 0) { throw 'Change-impact analysis failed.' }
 
 $results = New-Object System.Collections.ArrayList

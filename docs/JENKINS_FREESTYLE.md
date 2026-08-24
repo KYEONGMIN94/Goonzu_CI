@@ -2,6 +2,8 @@
 
 The current Jenkins 2.60.1 installation does not provide the Pipeline runtime required by `Jenkinsfile`. Until a maintained controller is available, a Freestyle job can call the same reviewed scripts without changing the build contract.
 
+The repository includes a Jenkins 2.60-compatible job template at `jenkins/jobs/Goonzu_Verify/config.xml`. Install it only on the dedicated build VM with `scripts/Install-JenkinsFreestyle.ps1`. The installer disables the inherited `Goonzu_Build_Client`, `Goonzu_Build_Server`, and `Goonzu_patch` jobs before installing the isolated job. Restart the build VM or Jenkins after installation so the controller reloads the files.
+
 ## Job inputs
 
 - `SOURCE_BRANCH`, default `master`
