@@ -79,6 +79,7 @@ try {
     $mergeMarkers = @()
     $textExtensions = @('.c','.cc','.cpp','.h','.hpp','.rc','.sln','.vcproj','.ps1','.bat','.cmd','.md','.toml','.yml','.yaml','.txt','.csv')
     foreach ($row in @($changedTable)) {
+        if ($null -eq $row -or $null -eq $row.PSObject.Properties['Path']) { continue }
         $fullPath = Join-Path $resolvedSource ([string]$row.Path)
         if (-not (Test-Path -LiteralPath $fullPath -PathType Leaf)) { continue }
         if ($textExtensions -notcontains [System.IO.Path]::GetExtension($fullPath).ToLowerInvariant()) { continue }
