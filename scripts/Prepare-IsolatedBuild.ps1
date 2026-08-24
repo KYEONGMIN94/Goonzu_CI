@@ -49,6 +49,76 @@ function Assert-SafeStagingRoot {
     }
 }
 
+function Set-ToolPathAttribute {
+    param(
+        [string]$ConfigurationBlock,
+        [string]$ToolName,
+        [string]$AttributeName,
+        [string]$DestinationRoot,
+        [ValidateSet('Directory','File')]
+        [string]$Mode,
+        [string]$FallbackLeaf = ''
+    )
+
+    $toolPattern = '(?s)<Tool\s+Name="' + [System.Text.RegularExpressions.Regex]::Escape($ToolName) + '".*?/>'
+    $toolRegex = New-Object System.Text.RegularExpressions.Regex($toolPattern)
+    $toolMatch = $toolRegex.Match($ConfigurationBlock)
+    if (-not $toolMatch.Success) { return $ConfigurationBlock }
+
+    $toolBlock = $toolMatch.Value
+    $attributePattern = [System.Text.RegularExpressions.Regex]::Escape($AttributeName) + '="([^"]*)"'
+    $attributeRegex = New-Object System.Text.RegularExpressions.Regex($attributePattern)
+    $attributeMatch = $attributeRegex.Match($toolBlock)
+    if (-not $attributeMatch.Success) { return $ConfigurationBlock }
+
+    if ($Mode -eq 'Directory') {
+        $newValue = Join-Path $DestinationRoot ''
+    }
+    else {
+        $oldValue = $attributeMatch.Groups[1].Value.Replace('/', '\').TrimEnd('\')
+        if ([string]::IsNullOrEmpty($oldValue)) { return $ConfigurationBlock }
+        $leaf = [System.IO.Path]::GetFileName($oldValue)
+        if ($leaf.IndexOf('$(') -ge 0) {
+            if ([string]::IsNullOrEmpty($FallbackLeaf)) { throw "Cannot isolate macro path $ToolName/${AttributeName}: $oldValue" }
+            $leaf = $FallbackLeaf
+        }
+        if ([string]::IsNullOrEmpty($leaf)) { return $ConfigurationBlock }
+        $newValue = Join-Path $DestinationRoot $leaf
+    }
+
+    $toolBlock = $attributeRegex.Replace($toolBlock, ($AttributeName + '="' + $newValue + '"'), 1)
+    return $ConfigurationBlock.Substring(0, $toolMatch.Index) + $toolBlock + $ConfigurationBlock.Substring($toolMatch.Index + $toolMatch.Length)
+}
+
+function Resolve-ProjectToolPath {
+    param([string]$Value, [string]$ProjectPath)
+    if ([string]::IsNullOrEmpty($Value)) { return '' }
+    if ($Value.IndexOf('$(') -ge 0) { throw "Unresolved build macro in path '$Value' for $ProjectPath." }
+    if ([System.IO.Path]::IsPathRooted($Value)) { return Get-FullPath $Value }
+    return Get-FullPath (Join-Path (Split-Path -Parent $ProjectPath) $Value)
+}
+
+function Assert-ToolPathsUnderRoot {
+    param(
+        [object[]]$Tools,
+        [string]$ProjectPath,
+        [string]$StagingRoot,
+        [hashtable]$ToolPathAttributes
+    )
+    foreach ($tool in @($Tools)) {
+        if ($null -eq $tool) { continue }
+        $toolName = [string]$tool.Name
+        if (-not $ToolPathAttributes.ContainsKey($toolName)) { continue }
+        foreach ($attribute in $ToolPathAttributes[$toolName]) {
+            $value = [string]$tool.GetAttribute($attribute)
+            if ([string]::IsNullOrEmpty($value)) { continue }
+            if ($value.StartsWith('$(IntDir)', [System.StringComparison]::OrdinalIgnoreCase) -or $value.StartsWith('$(OutDir)', [System.StringComparison]::OrdinalIgnoreCase)) { continue }
+            $resolvedToolPath = Resolve-ProjectToolPath -Value $value -ProjectPath $ProjectPath
+            if (-not (Test-PathUnderRoot -Path $resolvedToolPath -Root $StagingRoot)) { throw "Unsafe $toolName/$attribute in ${ProjectPath}: $value" }
+        }
+    }
+}
+
 function Set-ConfigurationPaths {
     param(
         [string]$ProjectPath,
@@ -69,6 +139,7 @@ function Set-ConfigurationPaths {
 
     $match = $matches[0]
     $block = $match.Value
+    $projectBase = [System.IO.Path]::GetFileNameWithoutExtension($ProjectPath)
     $outputRegex = New-Object System.Text.RegularExpressions.Regex('OutputDirectory="[^"]*"')
     $intermediateRegex = New-Object System.Text.RegularExpressions.Regex('IntermediateDirectory="[^"]*"')
     if (-not $outputRegex.IsMatch($block) -or -not $intermediateRegex.IsMatch($block)) {
@@ -77,10 +148,23 @@ function Set-ConfigurationPaths {
     $block = $outputRegex.Replace($block, ('OutputDirectory="' + $OutputDirectory + '"'), 1)
     $block = $intermediateRegex.Replace($block, ('IntermediateDirectory="' + $IntermediateDirectory + '"'), 1)
 
-    $compilerPdb = New-Object System.Text.RegularExpressions.Regex('ProgramDataBaseFileName="[^"]*"')
-    if ($compilerPdb.IsMatch($block)) {
-        $block = $compilerPdb.Replace($block, ('ProgramDataBaseFileName="' + (Join-Path $IntermediateDirectory '') + '"'), 1)
+    foreach ($attribute in @('ObjectFile','ProgramDataBaseFileName','AssemblerListingLocation','BrowseInformationFile')) {
+        $block = Set-ToolPathAttribute -ConfigurationBlock $block -ToolName 'VCCLCompilerTool' -AttributeName $attribute -DestinationRoot $IntermediateDirectory -Mode 'Directory'
     }
+    $block = Set-ToolPathAttribute -ConfigurationBlock $block -ToolName 'VCCLCompilerTool' -AttributeName 'PrecompiledHeaderFile' -DestinationRoot $IntermediateDirectory -Mode 'File' -FallbackLeaf ($projectBase + '.pch')
+    $midiFallbacks = @{
+        'TypeLibraryName' = $projectBase + '.tlb';
+        'HeaderFileName' = $projectBase + '.h';
+        'DLLDataFileName' = $projectBase + '_dlldata.c';
+        'InterfaceIdentifierFileName' = $projectBase + '_i.c';
+        'ProxyFileName' = $projectBase + '_p.c'
+    }
+    foreach ($attribute in $midiFallbacks.Keys) {
+        $block = Set-ToolPathAttribute -ConfigurationBlock $block -ToolName 'VCMIDLTool' -AttributeName $attribute -DestinationRoot $IntermediateDirectory -Mode 'File' -FallbackLeaf $midiFallbacks[$attribute]
+    }
+    $block = Set-ToolPathAttribute -ConfigurationBlock $block -ToolName 'VCBscMakeTool' -AttributeName 'OutputFile' -DestinationRoot $IntermediateDirectory -Mode 'File' -FallbackLeaf ($projectBase + '.bsc')
+    $block = Set-ToolPathAttribute -ConfigurationBlock $block -ToolName 'VCResourceCompilerTool' -AttributeName 'ResourceOutputFileName' -DestinationRoot $IntermediateDirectory -Mode 'File' -FallbackLeaf ($projectBase + '.res')
+    $block = Set-ToolPathAttribute -ConfigurationBlock $block -ToolName 'VCLibrarianTool' -AttributeName 'OutputFile' -DestinationRoot $OutputDirectory -Mode 'File' -FallbackLeaf ($projectBase + '.lib')
 
     if (-not [string]::IsNullOrEmpty($LinkOutput)) {
         $linkRegex = New-Object System.Text.RegularExpressions.Regex('(?s)<Tool\s+Name="VCLinkerTool".*?/>')
@@ -95,6 +179,17 @@ function Set-ConfigurationPaths {
         if ($linkPdbRegex.IsMatch($linkBlock)) {
             $pdbPath = [System.IO.Path]::ChangeExtension($LinkOutput, '.pdb')
             $linkBlock = $linkPdbRegex.Replace($linkBlock, ('ProgramDatabaseFile="' + $pdbPath + '"'), 1)
+        }
+        foreach ($attribute in @('ImportLibrary','MapFileName')) {
+            $attributeRegex = New-Object System.Text.RegularExpressions.Regex(([System.Text.RegularExpressions.Regex]::Escape($attribute) + '="([^"]*)"'))
+            $attributeMatch = $attributeRegex.Match($linkBlock)
+            if ($attributeMatch.Success -and -not [string]::IsNullOrEmpty($attributeMatch.Groups[1].Value)) {
+                if ($attribute -eq 'MapFileName') { $leaf = $projectBase + '.map' }
+                else { $leaf = $projectBase + '.lib' }
+                if (-not [string]::IsNullOrEmpty($leaf)) {
+                    $linkBlock = $attributeRegex.Replace($linkBlock, ($attribute + '="' + (Join-Path $IntermediateDirectory $leaf) + '"'), 1)
+                }
+            }
         }
         $block = $block.Substring(0, $linkMatch.Index) + $linkBlock + $block.Substring($linkMatch.Index + $linkMatch.Length)
     }
@@ -159,6 +254,14 @@ foreach ($row in $targetRows) {
 }
 
 $audit = @("Name`tProject`tConfiguration`tOutputDirectory`tIntermediateDirectory`tArtifact")
+$toolPathAttributes = @{
+    'VCCLCompilerTool' = @('ObjectFile','ProgramDataBaseFileName','AssemblerListingLocation','BrowseInformationFile','PrecompiledHeaderFile');
+    'VCMIDLTool' = @('TypeLibraryName','HeaderFileName','DLLDataFileName','InterfaceIdentifierFileName','ProxyFileName');
+    'VCBscMakeTool' = @('OutputFile');
+    'VCResourceCompilerTool' = @('ResourceOutputFileName');
+    'VCLibrarianTool' = @('OutputFile');
+    'VCLinkerTool' = @('OutputFile','ProgramDatabaseFile','ImportLibrary','MapFileName')
+}
 foreach ($row in $targetRows) {
     $projectPath = Join-Path $resolvedSource ([string]$row.Project)
     $xml = New-Object System.Xml.XmlDocument
@@ -171,7 +274,24 @@ foreach ($row in $targetRows) {
     $linker = @($config[0].Tool | Where-Object { $_.Name -eq 'VCLinkerTool' })
     if ($linker.Count -ne 1 -or -not (Test-PathUnderRoot -Path ([string]$linker[0].OutputFile) -Root $resolvedStaging)) { throw "Unsafe linker output in $projectPath." }
     if ([string]$linker[0].ProgramDatabaseFile -and -not (Test-PathUnderRoot -Path ([string]$linker[0].ProgramDatabaseFile) -Root $resolvedStaging)) { throw "Unsafe linker PDB in $projectPath." }
+    Assert-ToolPathsUnderRoot -Tools @($config[0].Tool) -ProjectPath $projectPath -StagingRoot $resolvedStaging -ToolPathAttributes $toolPathAttributes
+    $fileTools = @($xml.SelectNodes("//FileConfiguration[@Name='$([string]$row.ProjectConfiguration)']/Tool"))
+    Assert-ToolPathsUnderRoot -Tools $fileTools -ProjectPath $projectPath -StagingRoot $resolvedStaging -ToolPathAttributes $toolPathAttributes
     $audit += (([string]$row.Name) + "`t" + ([string]$row.Project) + "`t" + ([string]$row.ProjectConfiguration) + "`t" + ([string]$config[0].OutputDirectory) + "`t" + ([string]$config[0].IntermediateDirectory) + "`t" + $artifactPath)
+}
+
+foreach ($dependency in $dependencyRows) {
+    $projectPath = Join-Path $resolvedSource ([string]$dependency.Project)
+    $xml = New-Object System.Xml.XmlDocument
+    $xml.Load($projectPath)
+    $config = @(@($xml.VisualStudioProject.Configurations.Configuration) | Where-Object { $_.Name -eq [string]$dependency.ProjectConfiguration })
+    if ($config.Count -ne 1) { throw "Isolation audit could not find $($dependency.ProjectConfiguration) in $projectPath." }
+    if (-not (Test-PathUnderRoot -Path ([string]$config[0].OutputDirectory) -Root $resolvedStaging)) { throw "Unsafe dependency OutputDirectory in $projectPath." }
+    if (-not (Test-PathUnderRoot -Path ([string]$config[0].IntermediateDirectory) -Root $resolvedStaging)) { throw "Unsafe dependency IntermediateDirectory in $projectPath." }
+    Assert-ToolPathsUnderRoot -Tools @($config[0].Tool) -ProjectPath $projectPath -StagingRoot $resolvedStaging -ToolPathAttributes $toolPathAttributes
+    $fileTools = @($xml.SelectNodes("//FileConfiguration[@Name='$([string]$dependency.ProjectConfiguration)']/Tool"))
+    Assert-ToolPathsUnderRoot -Tools $fileTools -ProjectPath $projectPath -StagingRoot $resolvedStaging -ToolPathAttributes $toolPathAttributes
+    $audit += (([string]$dependency.Name) + "`t" + ([string]$dependency.Project) + "`t" + ([string]$dependency.ProjectConfiguration) + "`t" + ([string]$config[0].OutputDirectory) + "`t" + ([string]$config[0].IntermediateDirectory) + "`t")
 }
 
 [System.IO.File]::WriteAllLines((Join-Path $artifactRoot 'meta\isolation-audit.tsv'), [string[]]$audit, [System.Text.Encoding]::UTF8)
