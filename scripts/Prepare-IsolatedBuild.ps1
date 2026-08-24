@@ -239,7 +239,9 @@ foreach ($dependency in $dependencyRows) {
     foreach ($directory in @($outputDirectory, $intermediateDirectory)) {
         if (-not (Test-Path -LiteralPath $directory -PathType Container)) { New-Item -ItemType Directory -Path $directory -Force | Out-Null }
     }
-    Set-ConfigurationPaths -ProjectPath $projectPath -ConfigurationName ([string]$dependency.ProjectConfiguration) -OutputDirectory $outputDirectory -IntermediateDirectory $intermediateDirectory -LinkOutput ''
+    $dependencyLinkOutput = ''
+    if (-not [string]::IsNullOrEmpty([string]$dependency.LinkOutput)) { $dependencyLinkOutput = Join-Path $outputDirectory ([string]$dependency.LinkOutput) }
+    Set-ConfigurationPaths -ProjectPath $projectPath -ConfigurationName ([string]$dependency.ProjectConfiguration) -OutputDirectory $outputDirectory -IntermediateDirectory $intermediateDirectory -LinkOutput $dependencyLinkOutput
 }
 
 foreach ($row in $targetRows) {

@@ -1,4 +1,5 @@
-Name,Project,ProjectConfiguration,OutputSubdirectory,IntermediateSubdirectory
-lua513,NLib\lua\lua513.vcproj,Release|Win32,Libraries\lua513,Objects\lua513
-NStatistics,NStatistics\NStatistics.vcproj,Release|Win32,Libraries\NStatistics,Objects\NStatistics
-NkCommon,NLib\NTech\Src_NkCore\NkCommon\VC70\NkCommon.vcproj,Release|Win32,Libraries\NkCommon,Objects\NkCommon
+Name,Project,ProjectConfiguration,OutputSubdirectory,IntermediateSubdirectory,LinkOutput
+lua513,NLib\lua\lua513.vcproj,Release|Win32,Libraries\lua513,Objects\lua513,
+NStatistics,NStatistics\NStatistics.vcproj,Release|Win32,Libraries\NStatistics,Objects\NStatistics,
+NkCommon,NLib\NTech\Src_NkCore\NkCommon\VC70\NkCommon.vcproj,Release|Win32,Libraries\NkCommon,Objects\NkCommon,
+JapanAuth,Server\AuthServer\JapanAuth\JapanAuth.vcproj,Release_Korea|Win32,Libraries\JapanAuth,Objects\JapanAuth,JapanAuth.dll
